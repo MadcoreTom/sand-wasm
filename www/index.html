@@ -22,9 +22,13 @@
     <script>
 
         var draw = () => { console.log("Not loaded yet")};
+        var main = () => { console.log("Not loaded yet")};
+
 
         function tomInit() {
-            createExportWrapper('main')();
+            main = createExportWrapper('main');
+            main();
+            document.getElementById("wasm").addEventListener("click",()=>main());
             draw = createExportWrapper('draw');
             window.requestAnimationFrame(tick);
         }
