@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>C WASM</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            width: 960px;
+            height: 720px;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="320" height="240"></canvas>
+
+    <script async defer type="text/javascript" src="index.js" id="wasm"></script>
+    <script>
+
+        var draw = () => { console.log("Not loaded yet")};
+
+        function tomInit() {
+            createExportWrapper('main')();
+            draw = createExportWrapper('draw');
+            window.requestAnimationFrame(tick);
+        }
+
+        const MAX_FRAME_TIME_MS = 200;
+        let lastTime = 0;
+
+        function tick(time) {
+            const timeDelta = Math.min(time - lastTime, MAX_FRAME_TIME_MS);
+            lastTime = time;
+            draw(time, timeDelta);
+            window.requestAnimationFrame(tick);
+        }
+
+        document.getElementById("wasm").addEventListener("load", (r) => {
+            console.log("load");
+            setTimeout(() => tomInit(), 1000);
+        });
+
+
+    </script>
+</body>
+
+</html>

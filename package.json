@@ -1,0 +1,12 @@
+{
+  "name": "wasm-sand",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "wasm-build": "docker run --rm -v c:/code/wasm-sand:/src emscripten/emsdk emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS=\"['_main','_draw']\" -sSTACK_SIZE=1MB -sENVIRONMENT=web -lm",
+    "host":"http-serve ./www -p 8000"
+  },
+  "author": "",
+  "license": "ISC"
+}
