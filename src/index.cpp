@@ -23,30 +23,12 @@ void setVal(int x, int y, unsigned char v)
     if (!(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT))
     {
         sand[y * WIDTH + x] = v;
-        
-        imageData[(y * WIDTH + x) * 4 + 0] = v != 0 ? 0 : 255;
+
+        imageData[(y * WIDTH + x) * 4 + 0] = v == 0 ? 0 : 255;
         imageData[(y * WIDTH + x) * 4 + 1] = v != 1 ? 0 : 255;
         imageData[(y * WIDTH + x) * 4 + 2] = v != 2 ? 0 : 255;
         imageData[(y * WIDTH + x) * 4 + 3] = 255;
     }
-}
-
-
-int main()
-{
-    printf("Hello Main\n");
-
-    for (int x = 0; x < WIDTH; x++)
-    {
-        for (int y = 0; y < HEIGHT; y++)
-        {
-            int r = rand() % 9;
-            r = (((r * r) / 3))%3;
-
-            setVal(x, y, (unsigned char)r);
-        }
-    }
-    return 0;
 }
 
 int dir = -1;
@@ -84,8 +66,8 @@ extern "C"
                 }
             }
         }
-        
-        setVal(0,0,rand()%3);
+
+        setVal(0, 0, rand() % 3);
 
         // set the image data
         EM_ASM(
@@ -101,4 +83,27 @@ extern "C"
             HEIGHT);
         return 0;
     }
+
+    void reset()
+    {
+    printf("Reset\n");
+        for (int x = 0; x < WIDTH; x++)
+        {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+                int r = rand() % 9;
+                r = (((r * r) / 3)) % 3;
+
+                setVal(x, y, (unsigned char)r);
+            }
+        }
+    }
+}
+
+int main()
+{
+    printf("Hello Main\n");
+
+    reset();
+    return 0;
 }

@@ -21,15 +21,15 @@
     <script async defer type="text/javascript" src="index.js" id="wasm"></script>
     <script>
 
-        var draw = () => { console.log("Not loaded yet")};
-        var main = () => { console.log("Not loaded yet")};
+        var draw = () => { console.log("Not loaded yet") };
+        var reset = () => { console.log("Not loaded yet") };
 
+        window.addEventListener("click", () => {console.log("reset");reset()});
 
         function tomInit() {
-            main = createExportWrapper('main');
-            main();
-            document.getElementById("wasm").addEventListener("click",()=>main());
+            createExportWrapper('main')();
             draw = createExportWrapper('draw');
+            reset = createExportWrapper('reset');
             window.requestAnimationFrame(tick);
         }
 
