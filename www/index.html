@@ -18,6 +18,7 @@
 <body>
     <canvas id="canvas" width="320" height="240"></canvas>
     <button id="Reset">Reset</button>
+    <label><input type="checkbox" id="bigBrush">Big Brush</label>
 
     <script async defer type="text/javascript" src="index.js" id="wasm"></script>
     <script>
@@ -32,6 +33,8 @@
         canvas.style.width = canvas.width * scale + "px";
         canvas.style.height = canvas.height * scale + "px";
 
+        const brushCheckbox = document.getElementById("bigBrush");
+
         const wasm = document.getElementById("wasm");
         document.getElementById("Reset").addEventListener("click", () => {console.log("reset");reset()});
         canvas.addEventListener("mousemove", evt => { mousePos = [Math.floor(evt.offsetX/scale),Math.floor(evt.offsetY/scale)];});
@@ -40,7 +43,7 @@
         canvas.addEventListener("mouseout", evt => { mouseDown = false;});
 
         function tomInit() {
-            createExportWrapper('main')();
+            // createExportWrapper('main')();
             draw = createExportWrapper('draw');
             reset = createExportWrapper('reset');
             window.requestAnimationFrame(tick);
@@ -52,13 +55,13 @@
         function tick(time) {
             const timeDelta = Math.min(time - lastTime, MAX_FRAME_TIME_MS);
             lastTime = time;
-            draw(time, timeDelta, mousePos[0], mousePos[1], mouseDown);
+            draw(time, timeDelta, mousePos[0], mousePos[1], mouseDown, brushCheckbox.checked);
             window.requestAnimationFrame(tick);
         }
 
         wasm.addEventListener("load", (r) => {
             console.log("load");
-            setTimeout(() => tomInit(), 1000);
+            setTimeout(() => tomInit(), 100);
         });
 
 

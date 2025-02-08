@@ -21,7 +21,7 @@ unsigned char getVal(int x, int y)
 const unsigned char colours[3][3] = {
     {0,0,0},
     {255,200,0},
-    {250,0,0}
+    {250,0,50}
 };
 
 void setVal(int x, int y, unsigned char v)
@@ -43,7 +43,7 @@ int dir = -1;
 extern "C"
 {
     // EMSCRIPTEN_KEEPALIVE
-    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown)
+    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
         for (int y = HEIGHT - 1; y >= 0; y--)
@@ -73,8 +73,25 @@ extern "C"
             }
         }
 
-        if (mouseDown && getVal(mx, my) == 0) {
-            setVal(mx, my, 1);
+        if (mouseDown)
+        {
+            if (bigBrush)
+            {
+                for (int dx = -5; dx <= 5; dx++)
+                {
+                    for (int dy = -5; dy <= 5; dy++)
+                    {
+                        if (getVal(mx + dx, my + dy) == 0)
+                        {
+                            setVal(mx + dx, my + dy, 1);
+                        }
+                    }
+                }
+            }
+            else if (getVal(mx, my) == 0)
+            {
+                setVal(mx, my, 1);
+            }
         }
 
         // set the image data
