@@ -18,15 +18,21 @@ unsigned char getVal(int x, int y)
     return (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) ? 2 : sand[y * WIDTH + x];
 }
 
+const unsigned char colours[3][3] = {
+    {0,0,0},
+    {255,200,0},
+    {250,0,0}
+};
+
 void setVal(int x, int y, unsigned char v)
 {
     if (!(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT))
     {
         sand[y * WIDTH + x] = v;
 
-        imageData[(y * WIDTH + x) * 4 + 0] = v == 0 ? 0 : 255;
-        imageData[(y * WIDTH + x) * 4 + 1] = v != 1 ? 0 : 255;
-        imageData[(y * WIDTH + x) * 4 + 2] = v != 2 ? 0 : 255;
+        imageData[(y * WIDTH + x) * 4 + 0] = colours[v][0];
+        imageData[(y * WIDTH + x) * 4 + 1] = colours[v][1];
+        imageData[(y * WIDTH + x) * 4 + 2] = colours[v][2];
         imageData[(y * WIDTH + x) * 4 + 3] = 255;
     }
 }
@@ -37,7 +43,7 @@ int dir = -1;
 extern "C"
 {
     // EMSCRIPTEN_KEEPALIVE
-    int draw(int seed, float timeDelta)
+    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
         for (int y = HEIGHT - 1; y >= 0; y--)
@@ -67,7 +73,9 @@ extern "C"
             }
         }
 
-        setVal(0, 0, rand() % 3);
+        if (mouseDown && getVal(mx, my) == 0) {
+            setVal(mx, my, 1);
+        }
 
         // set the image data
         EM_ASM(
