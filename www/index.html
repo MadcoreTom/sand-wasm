@@ -8,64 +8,16 @@
     <style>
         canvas {
             border: 1px solid black;
-            /* width: 960px;
-            height: 720px; */
-            image-rendering: pixelated;
+            
         }
     </style>
 </head>
 
 <body>
-    <canvas id="canvas" width="320" height="240"></canvas>
     <button id="Reset">Reset</button>
-    <label><input type="checkbox" id="bigBrush">Big Brush</label>
 
-    <script async defer type="text/javascript" src="index.js" id="wasm"></script>
-    <script>
-
-        var draw = () => { console.log("Not loaded yet") };
-        var reset = () => { console.log("Not loaded yet") };
-        let mousePos = [0,0];
-        let mouseDown = false;
-        const scale = 3;
-
-        const canvas = document.getElementById("canvas");
-        canvas.style.width = canvas.width * scale + "px";
-        canvas.style.height = canvas.height * scale + "px";
-
-        const brushCheckbox = document.getElementById("bigBrush");
-
-        const wasm = document.getElementById("wasm");
-        document.getElementById("Reset").addEventListener("click", () => {console.log("reset");reset()});
-        canvas.addEventListener("mousemove", evt => { mousePos = [Math.floor(evt.offsetX/scale),Math.floor(evt.offsetY/scale)];});
-        canvas.addEventListener("mousedown", evt => { mouseDown = true;});
-        canvas.addEventListener("mouseup", evt => { mouseDown = false;});
-        canvas.addEventListener("mouseout", evt => { mouseDown = false;});
-
-        function tomInit() {
-            // createExportWrapper('main')();
-            draw = createExportWrapper('draw');
-            reset = createExportWrapper('reset');
-            window.requestAnimationFrame(tick);
-        }
-
-        const MAX_FRAME_TIME_MS = 200;
-        let lastTime = 0;
-
-        function tick(time) {
-            const timeDelta = Math.min(time - lastTime, MAX_FRAME_TIME_MS);
-            lastTime = time;
-            draw(time, timeDelta, mousePos[0], mousePos[1], mouseDown, brushCheckbox.checked);
-            window.requestAnimationFrame(tick);
-        }
-
-        wasm.addEventListener("load", (r) => {
-            console.log("load");
-            setTimeout(() => tomInit(), 100);
-        });
-
-
-    </script>
+    <script async  type="text/javascript" src="component.js" ></script>
+    <sand-component></sand-component>
 </body>
 
 </html>

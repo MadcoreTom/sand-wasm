@@ -1,2 +1,4 @@
 www/*.js
 www/*.wasm
+node_modules
+.vscode
