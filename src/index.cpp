@@ -1,5 +1,8 @@
 #include <emscripten.h>
+// #include <emscripten/val.h>
 #include <emscripten/html5.h>
+// #include <emscripten/bind.h> // If using emscripten::bind (recommended)
+
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
@@ -9,20 +12,30 @@
 #define PIXEL_COUNT 76800
 #define BUFFER_SIZE 307200
 
-unsigned char imageData[BUFFER_SIZE];
-
 unsigned char sand[WIDTH * HEIGHT];
+bool ready = false;
+uint8_t *wasmView;
+int dir = -1;
 
 unsigned char getVal(int x, int y)
 {
     return (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) ? 2 : sand[y * WIDTH + x];
 }
 
+// https://lospec.com/palette-list/nicole-punk-82
 const unsigned char colours[3][3] = {
-    {0,0,0},
-    {255,200,0},
-    {250,0,50}
+    {0xfa,0xf5,0xd8},
+    {0xf2,0xab,0x37},
+    {0x21,0x18,0x1b}
 };
+
+
+//  TODO, try this
+//  https://stackoverflow.com/questions/56010390/emscripten-how-to-get-uint8-t-array-from-c-to-javascript
+
+//  maybe wasm can create it, and javascript can get it once. then on every frame copy it into the  iamge data
+
+
 
 void setVal(int x, int y, unsigned char v)
 {
@@ -30,20 +43,38 @@ void setVal(int x, int y, unsigned char v)
     {
         sand[y * WIDTH + x] = v;
 
-        imageData[(y * WIDTH + x) * 4 + 0] = colours[v][0];
-        imageData[(y * WIDTH + x) * 4 + 1] = colours[v][1];
-        imageData[(y * WIDTH + x) * 4 + 2] = colours[v][2];
-        imageData[(y * WIDTH + x) * 4 + 3] = 255;
+        if(ready){
+            wasmView[(y * WIDTH + x) * 4 + 0] = colours[v][0];
+            wasmView[(y * WIDTH + x) * 4 + 1] = colours[v][1];
+            wasmView[(y * WIDTH + x) * 4 + 2] = colours[v][2];
+            wasmView[(y * WIDTH + x) * 4 + 3] = 255;
+        }
     }
 }
 
-int dir = -1;
+
+
 
 // needed when using cpp to make function visible externally
 extern "C"
 {
+   void reset();
     // EMSCRIPTEN_KEEPALIVE
-    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
+    uint8_t *getArray(int n)
+    {
+        printf("SSB\n");
+        wasmView = new uint8_t[n];
+        for (int i = 0; i < n; i++)
+        {
+            wasmView[i] = i%4==2 ? 50 : i;
+        }
+        ready = true;
+        reset();
+        return wasmView;
+    }
+
+    // EMSCRIPTEN_KEEPALIVE
+    int draw(float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
         for (int y = HEIGHT - 1; y >= 0; y--)
@@ -51,7 +82,6 @@ extern "C"
             for (int x2 = 0; x2 < WIDTH; x2++)
             {
                 int x = dir > 0 ? x2 : WIDTH - 1 - x2;
-                unsigned char a = getVal(x - 1 * dir, y - 1);
                 unsigned char b = getVal(x, y - 1);
                 unsigned char c = getVal(x - 1 * dir, y);
                 unsigned char d = getVal(x, y);
@@ -63,11 +93,16 @@ extern "C"
                         setVal(x, y - 1, 0);
                         setVal(x, y, 1);
                     }
-                    if (a == 1 && b == 0 && c != 0)
+                    else
                     {
-                        // down-right
-                        setVal(x - 1 * dir, y - 1, 0);
-                        setVal(x, y, 1);
+                        unsigned char a = getVal(x - 1 * dir, y - 1);
+                        unsigned char c = getVal(x - 1 * dir, y);
+                        if (a == 1 && b == 0 && c != 0)
+                        {
+                            // down-right
+                            setVal(x - 1 * dir, y - 1, 0);
+                            setVal(x, y, 1);
+                        }
                     }
                 }
             }
@@ -94,18 +129,6 @@ extern "C"
             }
         }
 
-        // set the image data
-        EM_ASM(
-            {
-                var canvas = document.querySelector('canvas');
-                var ctx = canvas.getContext('2d');
-                var imageData = ctx.createImageData($1, $2);
-                imageData.data.set(HEAPU8.subarray($0, $0 + ($1 * $2 * 4)));
-                ctx.putImageData(imageData, 0, 0);
-            },
-            imageData,
-            WIDTH,
-            HEIGHT);
         return 0;
     }
 

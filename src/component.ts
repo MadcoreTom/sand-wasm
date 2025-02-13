@@ -2,13 +2,14 @@
 class SandComponent extends HTMLElement {
     private animRequestId: number | null = null;
     private lastTime = 0;
-    private wasmDraw = (seed: number, timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
+    private wasmDraw = (timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
     private wasmReset = () => { };
     private mouseDown: boolean = false;
     private mousePos: [number, number] = [0, 0];
     private bigBrush: boolean;
     // private shadow: ShadowRoot;
     private ctx: CanvasRenderingContext2D;
+    private imageData: ImageData;
 
     constructor() {
         super();
@@ -31,6 +32,10 @@ class SandComponent extends HTMLElement {
         canvas.addEventListener("mouseout", () => { this.mouseDown = false; });
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         this.appendChild(canvas);
+
+        // image data
+        this.imageData = this.ctx.createImageData(canvas.width, canvas.height);
+
 
         // Brush Checkbox
         const brushLabel = document.createElement("label");
@@ -88,9 +93,20 @@ class SandComponent extends HTMLElement {
         }
     }
 
+    private myArray:Uint8Array;
+
     private onWasmLoad() {
         this.wasmDraw = createExportWrapper('draw');
         this.wasmReset = createExportWrapper('reset');
+        const getArray = createExportWrapper('getArray');
+
+        const len = 320*240*4;
+       const arr = getArray(len);
+       console.log("arr",arr)
+       this.myArray = new Uint8Array(Module.HEAP8.buffer, arr, len); // Example: for byte array
+console.log("arr2",this.myArray[0], this.myArray[1])
+       
+
         this.requestAnim();
     }
 
@@ -98,9 +114,21 @@ class SandComponent extends HTMLElement {
         const MAX_FRAME_TIME_MS = 200;
         const timeDelta = Math.min(time - this.lastTime, MAX_FRAME_TIME_MS);
         this.lastTime = time;
-        this.wasmDraw(time, timeDelta,
+        // const bufferPtr = WebAssembly.Module.exports.allocate_uint8array(this.imageData); //allocate_uint8array from emscripten
+        this.wasmDraw(timeDelta,
             this.mousePos[0], this.mousePos[1], this.mouseDown,
             this.bigBrush);
+            if(this.myArray){
+                
+            const buf = new ArrayBuffer(320*240*4);
+            const arrayBufferView = new Uint8Array(buf);
+            arrayBufferView.set(this.myArray); // Efficiently copies the contents
+this.imageData.data.set(arrayBufferView);
+            this.ctx.putImageData(this.imageData,0,0);
+            console.log("READY", this.imageData.data[3])
+        } else {
+            console.log("No array")
+        }
 
         this.requestAnim();
     }

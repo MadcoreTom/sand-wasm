@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "wasm-build": "docker run --rm -v c:/code/wasm-sand:/src emscripten/emsdk emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS=\"['_main','_draw','_reset']\" -sSTACK_SIZE=1MB -sENVIRONMENT=web -lm",
+    "wasm-build": "docker run --rm -v c:/code/wasm-sand:/src emscripten/emsdk emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS=\"['_main','_draw','_reset','_getArray']\" -sSTACK_SIZE=1MB -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -sENVIRONMENT=web -lm",
     "ts-build": "esbuild src/component.ts --bundle --minify --outdir=./www",
     "host": "http-serve ./www -p 8000"
   },
