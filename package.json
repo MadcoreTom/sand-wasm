@@ -12,5 +12,8 @@
   "license": "ISC",
   "devDependencies": {
     "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "@types/emscripten": "^1.40.0"
   }
 }

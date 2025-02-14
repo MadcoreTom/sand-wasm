@@ -1,7 +1,5 @@
 #include <emscripten.h>
-// #include <emscripten/val.h>
 #include <emscripten/html5.h>
-// #include <emscripten/bind.h> // If using emscripten::bind (recommended)
 
 #include <stdio.h>
 #include <time.h>
@@ -14,9 +12,10 @@
 
 unsigned char sand[WIDTH * HEIGHT];
 bool ready = false;
-uint8_t *wasmView;
-int dir = -1;
+uint8_t *wasmView; // shared pixel array
+int dir = -1; // simulation direction
 
+// Get sand value
 unsigned char getVal(int x, int y)
 {
     return (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) ? 2 : sand[y * WIDTH + x];
@@ -29,14 +28,7 @@ const unsigned char colours[3][3] = {
     {0x21,0x18,0x1b}
 };
 
-
-//  TODO, try this
-//  https://stackoverflow.com/questions/56010390/emscripten-how-to-get-uint8-t-array-from-c-to-javascript
-
-//  maybe wasm can create it, and javascript can get it once. then on every frame copy it into the  iamge data
-
-
-
+// Set sand value, and colour
 void setVal(int x, int y, unsigned char v)
 {
     if (!(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT))
@@ -150,7 +142,7 @@ extern "C"
 
 int main()
 {
-    printf("Hello Main\n");
+    printf("Hello WASM\n");
 
     reset();
     return 0;

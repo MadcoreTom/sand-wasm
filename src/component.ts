@@ -1,3 +1,7 @@
+const WIDTH = 320;
+const HEIGHT = 240;
+const SCALE = 3;
+
 
 class SandComponent extends HTMLElement {
     private animRequestId: number | null = null;
@@ -7,35 +11,36 @@ class SandComponent extends HTMLElement {
     private mouseDown: boolean = false;
     private mousePos: [number, number] = [0, 0];
     private bigBrush: boolean;
-    // private shadow: ShadowRoot;
+    private shadow: ShadowRoot;
     private ctx: CanvasRenderingContext2D;
     private imageData: ImageData;
+    private arrayBufferView: Uint8Array;
 
     constructor() {
         super();
-        // this.shadow = this.attachShadow({ mode: 'open' });
+        this.shadow = this.attachShadow({ mode: 'open' });
     }
 
     connectedCallback() {
 
         // Canvas Element
         const canvas = document.createElement("canvas") as HTMLCanvasElement;
-        canvas.width = 320;
-        canvas.height = 240;
-        canvas.style.imageRendering= "pixelated";
-        const scale = 3;
-        canvas.style.width = canvas.width * scale + "px";
-        canvas.style.height = canvas.height * scale + "px";
-        canvas.addEventListener("mousemove", evt => { this.mousePos = [Math.floor(evt.offsetX / scale), Math.floor(evt.offsetY / scale)]; });
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        canvas.style.imageRendering = "pixelated";
+        canvas.style.width = canvas.width * SCALE + "px";
+        canvas.style.height = canvas.height * SCALE + "px";
+        canvas.addEventListener("mousemove", evt => { this.mousePos = [Math.floor(evt.offsetX / SCALE), Math.floor(evt.offsetY / SCALE)]; });
         canvas.addEventListener("mousedown", () => { this.mouseDown = true; });
         canvas.addEventListener("mouseup", () => { this.mouseDown = false; });
         canvas.addEventListener("mouseout", () => { this.mouseDown = false; });
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-        this.appendChild(canvas);
+        this.shadow.appendChild(canvas);
 
-        // image data
+        // image data and array buffer to hold shared memory
+        const buf = new ArrayBuffer(WIDTH * HEIGHT * 4);
+        this.arrayBufferView = new Uint8Array(buf);
         this.imageData = this.ctx.createImageData(canvas.width, canvas.height);
-
 
         // Brush Checkbox
         const brushLabel = document.createElement("label");
@@ -44,12 +49,12 @@ class SandComponent extends HTMLElement {
         brushCheckbox.addEventListener("change", () => this.bigBrush = brushCheckbox.checked);
         brushLabel.append(brushCheckbox);
         brushLabel.appendChild(document.createTextNode("Big Brush"));
-        this.append(brushLabel);
+        this.shadow.append(brushLabel);
 
-        // TODO reset button
+        // reset button
         const resetButton = this.ownerDocument.createElement("button");
         resetButton.innerText = "Reset";
-        this.appendChild(resetButton);
+        this.shadow.appendChild(resetButton);
         resetButton.addEventListener("click", () => this.wasmReset());
 
         // Create an observer
@@ -70,12 +75,11 @@ class SandComponent extends HTMLElement {
         }, options);
         observer.observe(canvas);
 
-        // WASM
+        // Add a script for the WASM element
         const wasmElement = document.createElement("script") as HTMLScriptElement;
         wasmElement.type = "text/javascript";
         wasmElement.async = true;
-        wasmElement.addEventListener("load", (r) => {
-            console.log("WASM loaded");
+        wasmElement.addEventListener("load", () => {
             setTimeout(() => this.onWasmLoad(), 100);
         });
         wasmElement.src = "index.js";
@@ -93,41 +97,40 @@ class SandComponent extends HTMLElement {
         }
     }
 
-    private myArray:Uint8Array;
+    private pixelArray: Uint8Array;
 
     private onWasmLoad() {
+        console.log("WASM loaded");
+
+        // Get exported functions
         this.wasmDraw = createExportWrapper('draw');
         this.wasmReset = createExportWrapper('reset');
         const getArray = createExportWrapper('getArray');
 
-        const len = 320*240*4;
-       const arr = getArray(len);
-       console.log("arr",arr)
-       this.myArray = new Uint8Array(Module.HEAP8.buffer, arr, len); // Example: for byte array
-console.log("arr2",this.myArray[0], this.myArray[1])
-       
+        // Link up WASM array with this.myArray
+        const len = WIDTH * HEIGHT * 4;
+        const arr = getArray(len);
+        this.pixelArray = new Uint8Array(Module.HEAP8.buffer, arr, len);
 
         this.requestAnim();
     }
 
     private draw(time: number) {
+        // Frame Time
         const MAX_FRAME_TIME_MS = 200;
         const timeDelta = Math.min(time - this.lastTime, MAX_FRAME_TIME_MS);
         this.lastTime = time;
-        // const bufferPtr = WebAssembly.Module.exports.allocate_uint8array(this.imageData); //allocate_uint8array from emscripten
+
+        // Call WASM function
         this.wasmDraw(timeDelta,
             this.mousePos[0], this.mousePos[1], this.mouseDown,
             this.bigBrush);
-            if(this.myArray){
-                
-            const buf = new ArrayBuffer(320*240*4);
-            const arrayBufferView = new Uint8Array(buf);
-            arrayBufferView.set(this.myArray); // Efficiently copies the contents
-this.imageData.data.set(arrayBufferView);
-            this.ctx.putImageData(this.imageData,0,0);
-            console.log("READY", this.imageData.data[3])
-        } else {
-            console.log("No array")
+
+        // Copy the shared array into the image data and draw it
+        if (this.pixelArray) {
+            this.arrayBufferView.set(this.pixelArray); // Efficiently copies the contents
+            this.imageData.data.set(this.arrayBufferView);
+            this.ctx.putImageData(this.imageData, 0, 0);
         }
 
         this.requestAnim();
