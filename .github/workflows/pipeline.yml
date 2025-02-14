@@ -28,9 +28,9 @@ jobs:
           node-version: 20.x
 
       - name: Set up Emscripten
-        uses: emscripten-wasm/setup-emscripten@v2
+        uses: lovasoa/setup-emscripten@master
         with:
-         emsdk-version: latest # This will cause issues later
+          emscripten-version:  latest # This will cause issues later
 
       - name: Install dependencies
         run: npm install
