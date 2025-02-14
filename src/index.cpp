@@ -13,7 +13,7 @@
 unsigned char sand[WIDTH * HEIGHT];
 bool ready = false;
 uint8_t *wasmView; // shared pixel array
-int dir = -1; // simulation direction
+int dir = -1;      // simulation direction
 
 // Get sand value
 unsigned char getVal(int x, int y)
@@ -23,10 +23,14 @@ unsigned char getVal(int x, int y)
 
 // https://lospec.com/palette-list/nicole-punk-82
 const unsigned char colours[3][3] = {
-    {0xfa,0xf5,0xd8},
-    {0xf2,0xab,0x37},
-    {0x21,0x18,0x1b}
-};
+    {0xfa, 0xf5, 0xd8},
+    {0xf2, 0xab, 0x37},
+    {0x21, 0x18, 0x1b}};
+
+const unsigned char rainbow[3][3] = {
+    {0xff, 0x00, 0x4d},
+    {0x00, 0xe4, 0x36},
+    {0x29, 0xad, 0xff}};
 
 // Set sand value, and colour
 void setVal(int x, int y, unsigned char v)
@@ -35,7 +39,8 @@ void setVal(int x, int y, unsigned char v)
     {
         sand[y * WIDTH + x] = v;
 
-        if(ready){
+        if (ready)
+        {
             wasmView[(y * WIDTH + x) * 4 + 0] = colours[v][0];
             wasmView[(y * WIDTH + x) * 4 + 1] = colours[v][1];
             wasmView[(y * WIDTH + x) * 4 + 2] = colours[v][2];
@@ -44,13 +49,53 @@ void setVal(int x, int y, unsigned char v)
     }
 }
 
+// Set sand value, and colour
+void setSandRgb(int x, int y, unsigned char r, unsigned char g, unsigned char b)
+{
+    if (!(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT))
+    {
+        sand[y * WIDTH + x] = 1;
 
+        if (ready)
+        {
+            wasmView[(y * WIDTH + x) * 4 + 0] = r;
+            wasmView[(y * WIDTH + x) * 4 + 1] = g;
+            wasmView[(y * WIDTH + x) * 4 + 2] = b;
+            wasmView[(y * WIDTH + x) * 4 + 3] = 255;
+        }
+    }
+}
 
+void swapVal(int x, int y, int x2, int y2)
+{
+    if (!(x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT))
+    {
+        int i = (y * WIDTH + x) * 4;
+        int i2 = (y2 * WIDTH + x2) * 4;
+        uint8_t aColR = wasmView[i + 0];
+        uint8_t aColG = wasmView[i + 1];
+        uint8_t aColB = wasmView[i + 2];
+        uint8_t aColA = wasmView[i + 3];
+        unsigned char aSand = sand[y * WIDTH + x];
+        // set A
+        wasmView[i + 0] = wasmView[i2 + 0];
+        wasmView[i + 1] = wasmView[i2 + 1];
+        wasmView[i + 2] = wasmView[i2 + 2];
+        wasmView[i + 3] = wasmView[i2 + 3];
+        sand[y * WIDTH + x] = sand[y2 * WIDTH + x2];
+        // set B
+        wasmView[i2 + 0] = aColR;
+        wasmView[i2 + 1] = aColG;
+        wasmView[i2 + 2] = aColB;
+        wasmView[i2 + 3] = aColA;
+        sand[y2 * WIDTH + x2] = aSand;
+    }
+}
 
 // needed when using cpp to make function visible externally
 extern "C"
 {
-   void reset();
+    void reset();
     // EMSCRIPTEN_KEEPALIVE
     uint8_t *getArray(int n)
     {
@@ -58,7 +103,7 @@ extern "C"
         wasmView = new uint8_t[n];
         for (int i = 0; i < n; i++)
         {
-            wasmView[i] = i%4==2 ? 50 : i;
+            wasmView[i] = i % 4 == 2 ? 50 : i;
         }
         ready = true;
         reset();
@@ -66,7 +111,7 @@ extern "C"
     }
 
     // EMSCRIPTEN_KEEPALIVE
-    int draw(float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
+    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
         for (int y = HEIGHT - 1; y >= 0; y--)
@@ -82,8 +127,7 @@ extern "C"
                     if (b == 1)
                     {
                         // down
-                        setVal(x, y - 1, 0);
-                        setVal(x, y, 1);
+                        swapVal(x, y, x, y - 1);
                     }
                     else
                     {
@@ -92,8 +136,7 @@ extern "C"
                         if (a == 1 && b == 0 && c != 0)
                         {
                             // down-right
-                            setVal(x - 1 * dir, y - 1, 0);
-                            setVal(x, y, 1);
+                            swapVal(x, y, x - 1 * dir, y - 1);
                         }
                     }
                 }
@@ -110,14 +153,14 @@ extern "C"
                     {
                         if (getVal(mx + dx, my + dy) == 0)
                         {
-                            setVal(mx + dx, my + dy, 1);
+                            setSandRgb(mx + dx, my + dy, rainbow[seed % 3][0], rainbow[seed % 3][1], rainbow[seed % 3][2]);
                         }
                     }
                 }
             }
             else if (getVal(mx, my) == 0)
             {
-                setVal(mx, my, 1);
+                setSandRgb(mx, my, rainbow[seed % 3][0], rainbow[seed % 3][1], rainbow[seed % 3][2]);
             }
         }
 
@@ -126,7 +169,7 @@ extern "C"
 
     void reset()
     {
-    printf("Reset\n");
+        printf("Reset\n");
         for (int x = 0; x < WIDTH; x++)
         {
             for (int y = 0; y < HEIGHT; y++)

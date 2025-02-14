@@ -6,7 +6,7 @@ const SCALE = 3;
 class SandComponent extends HTMLElement {
     private animRequestId: number | null = null;
     private lastTime = 0;
-    private wasmDraw = (timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
+    private wasmDraw = (seed:number, timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
     private wasmReset = () => { };
     private mouseDown: boolean = false;
     private mousePos: [number, number] = [0, 0];
@@ -15,6 +15,7 @@ class SandComponent extends HTMLElement {
     private ctx: CanvasRenderingContext2D;
     private imageData: ImageData;
     private arrayBufferView: Uint8Array;
+    private drawSeed: number=1;
 
     constructor() {
         super();
@@ -32,7 +33,10 @@ class SandComponent extends HTMLElement {
         canvas.style.height = canvas.height * SCALE + "px";
         canvas.addEventListener("mousemove", evt => { this.mousePos = [Math.floor(evt.offsetX / SCALE), Math.floor(evt.offsetY / SCALE)]; });
         canvas.addEventListener("mousedown", () => { this.mouseDown = true; });
-        canvas.addEventListener("mouseup", () => { this.mouseDown = false; });
+        canvas.addEventListener("mouseup", () => { 
+            this.mouseDown = false;
+            this.drawSeed = Math.floor(Math.random()*255);
+         });
         canvas.addEventListener("mouseout", () => { this.mouseDown = false; });
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         this.shadow.appendChild(canvas);
@@ -122,7 +126,7 @@ class SandComponent extends HTMLElement {
         this.lastTime = time;
 
         // Call WASM function
-        this.wasmDraw(timeDelta,
+        this.wasmDraw(this.drawSeed, timeDelta,
             this.mousePos[0], this.mousePos[1], this.mouseDown,
             this.bigBrush);
 
