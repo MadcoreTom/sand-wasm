@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Set up Emscripten
+        uses: emscripten-wasm/setup-emscripten@v2
+        with:
+         emsdk-version: latest # This will cause issues later
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run ts-build
+
+      - name: Emscripten build
+        run: emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS=\"['_main','_draw','_reset','_getArray']\" -sSTACK_SIZE=1MB -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -sENVIRONMENT=web -lm
+
+      - name: Upload build artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./www
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}   
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
