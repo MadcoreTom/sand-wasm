@@ -103,9 +103,9 @@ class SandComponent extends HTMLElement {
         console.log("WASM loaded");
 
         // Get exported functions
-        this.wasmDraw = createExportWrapper('draw');
-        this.wasmReset = createExportWrapper('reset');
-        const getArray = createExportWrapper('getArray');
+        this.wasmDraw = Module._draw;
+        this.wasmReset = Module._reset;
+        const getArray = Module._getArray;
 
         // Link up WASM array with this.myArray
         const len = WIDTH * HEIGHT * 4;
