@@ -37,7 +37,7 @@ jobs:
         run: npm run ts-build
 
       - name: Emscripten build
-        run: emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS=\"['_main','_draw','_reset','_getArray']\" -sSTACK_SIZE=1MB -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -sENVIRONMENT=web -lm
+        run: emcc src/index.cpp -o www/index.js -s EXPORTED_FUNCTIONS="['_main','_draw','_reset','_getArray']" -sSTACK_SIZE=1MB -s WASM=1 -s ALLOW_MEMORY_GROWTH=1  -sENVIRONMENT=web -lm
 
       - name: Upload build artifacts
         uses: actions/upload-pages-artifact@v3
