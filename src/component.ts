@@ -16,6 +16,7 @@ class SandComponent extends HTMLElement {
     private imageData: ImageData;
     private arrayBufferView: Uint8Array;
     private drawSeed: number=1;
+    private image;
 
     constructor() {
         super();
@@ -84,7 +85,8 @@ class SandComponent extends HTMLElement {
         wasmElement.type = "text/javascript";
         wasmElement.async = true;
         wasmElement.addEventListener("load", () => {
-            setTimeout(() => this.onWasmLoad(), 100);
+            // TODO we can do something with Modulle.onRuntimeInitialized if we can call it
+            setTimeout(() => this.onWasmLoad(), 250);
         });
         wasmElement.src = "index.js";
         this.appendChild(wasmElement)
@@ -110,11 +112,24 @@ class SandComponent extends HTMLElement {
         this.wasmDraw = Module._draw;
         this.wasmReset = Module._reset;
         const getArray = Module._getArray;
+        const initSand = Module._initSand;
+
+        console.log(getArray, initSand)
 
         // Link up WASM array with this.myArray
         const len = WIDTH * HEIGHT * 4;
         const arr = getArray(len);
         this.pixelArray = new Uint8Array(Module.HEAP8.buffer, arr, len);
+
+        this.image = new Image();
+        this.image.addEventListener("load",()=>{
+            console.log("Image load")
+            this.ctx.drawImage(this.image,0,0);
+            const data = this.ctx.getImageData(0,0,WIDTH,HEIGHT);
+            this.pixelArray.set(data.data);
+            initSand();
+        });
+        this.image.src="level.png"
 
         this.requestAnim();
     }

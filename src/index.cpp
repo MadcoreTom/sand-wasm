@@ -27,10 +27,11 @@ const unsigned char colours[3][3] = {
     {0xf2, 0xab, 0x37},
     {0x21, 0x18, 0x1b}};
 
-const unsigned char rainbow[3][3] = {
+const unsigned char rainbow[4][3] = {
     {0xff, 0x00, 0x4d},
     {0x00, 0xe4, 0x36},
-    {0x29, 0xad, 0xff}};
+    {0x29, 0xad, 0xff},
+    {0x77, 0x0f, 0xf5}};
 
 // Set sand value, and colour
 void setVal(int x, int y, unsigned char v)
@@ -111,6 +112,21 @@ extern "C"
     }
 
     // EMSCRIPTEN_KEEPALIVE
+    void initSand()
+    {
+        printf("init sand\n");
+        for (int x = 0; x < WIDTH; x++)
+        {
+            for (int y = 0; y < HEIGHT; y++)
+            {
+                int i = (x+y*WIDTH)*4;
+                sand[x+y*WIDTH] = (wasmView[i+0] == 255 &&  wasmView[i+1] == 255 &&  wasmView[i+2] == 255) ? 0 : 2;
+            }
+        }
+        return;
+    }
+
+    // EMSCRIPTEN_KEEPALIVE
     int draw(int seed, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
@@ -153,14 +169,14 @@ extern "C"
                     {
                         if (getVal(mx + dx, my + dy) == 0)
                         {
-                            setSandRgb(mx + dx, my + dy, rainbow[seed % 3][0], rainbow[seed % 3][1], rainbow[seed % 3][2]);
+                            setSandRgb(mx + dx, my + dy, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
                         }
                     }
                 }
             }
             else if (getVal(mx, my) == 0)
             {
-                setSandRgb(mx, my, rainbow[seed % 3][0], rainbow[seed % 3][1], rainbow[seed % 3][2]);
+                setSandRgb(mx, my, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
             }
         }
 
