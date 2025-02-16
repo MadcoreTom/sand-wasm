@@ -85,8 +85,11 @@ class SandComponent extends HTMLElement {
         wasmElement.type = "text/javascript";
         wasmElement.async = true;
         wasmElement.addEventListener("load", () => {
-            // TODO we can do something with Modulle.onRuntimeInitialized if we can call it
-            setTimeout(() => this.onWasmLoad(), 100);
+            if (Module.wasmReady) {
+                this.onWasmLoad()
+            } else {
+                Module.onRuntimeInitialized = () => this.onWasmLoad();
+            }
         });
         wasmElement.src = "index.js";
         this.appendChild(wasmElement)
@@ -106,42 +109,30 @@ class SandComponent extends HTMLElement {
     private pixelArray: Uint8Array;
 
     private onWasmLoad() {
-        console.log("WASM load attempt");
-        // Keep trying until the functions are available
-        if(!Module._draw){
-            setTimeout(() => this.onWasmLoad(), 100);
-            return;
-        }
-        console.log("WASM loaded");
+            console.log("WASM init");
 
-        // Get exported functions
-        this.wasmDraw = Module._draw;
-        this.wasmReset = Module._reset;
-        const getArray = Module._getArray;
-        const initSand = Module._initSand;
+            // Get exported functions
+            this.wasmDraw = Module._draw;
+            this.wasmReset = Module._reset;
+            const getArray = Module._getArray;
+            const initSand = Module._initSand;
 
-        // Link up WASM array with this.myArray
-        try{
+            // Link up WASM array with this.myArray
             const len = WIDTH * HEIGHT * 4;
             const arr = getArray(len);
             this.pixelArray = new Uint8Array(Module.HEAP8.buffer, arr, len);
-        } catch(e){
-            console.log(e);
-            setTimeout(() => this.onWasmLoad(), 200);
-            return;
-        }
 
-        this.image = new Image();
-        this.image.addEventListener("load",()=>{
-            console.log("Image load")
-            this.ctx.drawImage(this.image,0,0);
-            const data = this.ctx.getImageData(0,0,WIDTH,HEIGHT);
-            this.pixelArray.set(data.data);
-            initSand();
-        });
-        this.image.src="level.png"
+            this.image = new Image();
+            this.image.addEventListener("load", () => {
+                console.log("Image load")
+                this.ctx.drawImage(this.image, 0, 0);
+                const data = this.ctx.getImageData(0, 0, WIDTH, HEIGHT);
+                this.pixelArray.set(data.data);
+                initSand();
+            });
+            this.image.src = "level.png"
 
-        this.requestAnim();
+            this.requestAnim();
     }
 
     private draw(time: number) {
@@ -164,6 +155,12 @@ class SandComponent extends HTMLElement {
 
         this.requestAnim();
     }
+}
+
+// Adding this property to the global Module so we can work out if its ready or not
+window.Module= {};
+Module.onRuntimeInitialized = ()=>{
+    Module.wasmReady = true;
 }
 
 customElements.define("sand-component", SandComponent);
