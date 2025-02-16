@@ -127,7 +127,7 @@ extern "C"
     }
 
     // EMSCRIPTEN_KEEPALIVE
-    int draw(int seed, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
+    int draw(int seed, int mode, float timeDelta, int mx, int my, bool mouseDown, bool bigBrush)
     {
         dir = dir == 1 ? -1 : 1; // flip each frame
         for (int y = HEIGHT - 1; y >= 0; y--)
@@ -161,22 +161,37 @@ extern "C"
 
         if (mouseDown)
         {
-            if (bigBrush)
-            {
+            if(mode == 0){
+                if (bigBrush)
+                {
+                    for (int dx = -5; dx <= 5; dx++)
+                    {
+                        for (int dy = -5; dy <= 5; dy++)
+                        {
+                            if (getVal(mx + dx, my + dy) == 0)
+                            {
+                                setSandRgb(mx + dx, my + dy, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
+                            }
+                        }
+                    }
+                }
+                else if (getVal(mx, my) == 0)
+                {
+                    setSandRgb(mx, my, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
+                }
+            } else if(mode == 1){
                 for (int dx = -5; dx <= 5; dx++)
                 {
                     for (int dy = -5; dy <= 5; dy++)
                     {
-                        if (getVal(mx + dx, my + dy) == 0)
+                        if (getVal(mx + dx, my + dy) == 2)
                         {
-                            setSandRgb(mx + dx, my + dy, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
+                            if (!(mx + dx < 0 || mx + dx >= WIDTH || my + dy < 0 || my + dy >= HEIGHT)){
+                                sand[(mx + dx)+ (my + dy) * WIDTH] = 1;
+                            }
                         }
                     }
                 }
-            }
-            else if (getVal(mx, my) == 0)
-            {
-                setSandRgb(mx, my, rainbow[seed % 4][0], rainbow[seed % 4][1], rainbow[seed % 4][2]);
             }
         }
 

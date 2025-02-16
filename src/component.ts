@@ -2,11 +2,17 @@ const WIDTH = 320;
 const HEIGHT = 240;
 const SCALE = 3;
 
+// Adding this property to the global Module so we can work out if its ready or not
+let Module = window['Module']= {} as any;
+Module.onRuntimeInitialized = ()=>{
+    Module.wasmReady = true;
+}
+
 
 class SandComponent extends HTMLElement {
     private animRequestId: number | null = null;
     private lastTime = 0;
-    private wasmDraw = (seed:number, timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
+    private wasmDraw = (seed:number, mode:number, timeDelta: number, mouseX: number, mouseY: number, mouseDown: boolean, bigBrush: boolean) => { };
     private wasmReset = () => { };
     private mouseDown: boolean = false;
     private mousePos: [number, number] = [0, 0];
@@ -17,6 +23,8 @@ class SandComponent extends HTMLElement {
     private arrayBufferView: Uint8Array;
     private drawSeed: number=1;
     private image;
+    private modeButton: HTMLElement;
+    private mode = 0;
 
     constructor() {
         super();
@@ -55,6 +63,15 @@ class SandComponent extends HTMLElement {
         brushLabel.append(brushCheckbox);
         brushLabel.appendChild(document.createTextNode("Big Brush"));
         this.shadow.append(brushLabel);
+
+        // Mode button
+        this.modeButton = this.ownerDocument.createElement("button");
+        this.modeButton.innerText = "Mode: Sand";
+        this.shadow.appendChild(this.modeButton);
+        this.modeButton.addEventListener("click", () => {
+            this.mode = (this.mode+1)%2;
+            this.modeButton.textContent = "Mode: " + ["Sand","Destroy"][this.mode];
+        });
 
         // reset button
         const resetButton = this.ownerDocument.createElement("button");
@@ -142,7 +159,7 @@ class SandComponent extends HTMLElement {
         this.lastTime = time;
 
         // Call WASM function
-        this.wasmDraw(this.drawSeed, timeDelta,
+        this.wasmDraw(this.drawSeed, this.mode, timeDelta,
             this.mousePos[0], this.mousePos[1], this.mouseDown,
             this.bigBrush);
 
@@ -157,10 +174,5 @@ class SandComponent extends HTMLElement {
     }
 }
 
-// Adding this property to the global Module so we can work out if its ready or not
-window.Module= {};
-Module.onRuntimeInitialized = ()=>{
-    Module.wasmReady = true;
-}
 
 customElements.define("sand-component", SandComponent);

@@ -7,6 +7,7 @@
 # TODO
 
 * ✅ Add method to set sand from image 
+* ✅ Add a way to turn solid pixels into sand
 * ⬜ Add method to sample sand from javascript
     * ⬜ Add a common way to share an array of bytes
 * ⬜ Add a game loop update
