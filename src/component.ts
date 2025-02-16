@@ -86,7 +86,7 @@ class SandComponent extends HTMLElement {
         wasmElement.async = true;
         wasmElement.addEventListener("load", () => {
             // TODO we can do something with Modulle.onRuntimeInitialized if we can call it
-            setTimeout(() => this.onWasmLoad(), 250);
+            setTimeout(() => this.onWasmLoad(), 100);
         });
         wasmElement.src = "index.js";
         this.appendChild(wasmElement)
@@ -106,6 +106,12 @@ class SandComponent extends HTMLElement {
     private pixelArray: Uint8Array;
 
     private onWasmLoad() {
+        console.log("WASM load attempt");
+        // Keep trying until the functions are available
+        if(!Module._draw){
+            setTimeout(() => this.onWasmLoad(), 100);
+            return;
+        }
         console.log("WASM loaded");
 
         // Get exported functions
@@ -113,8 +119,6 @@ class SandComponent extends HTMLElement {
         this.wasmReset = Module._reset;
         const getArray = Module._getArray;
         const initSand = Module._initSand;
-
-        console.log(getArray, initSand)
 
         // Link up WASM array with this.myArray
         const len = WIDTH * HEIGHT * 4;
