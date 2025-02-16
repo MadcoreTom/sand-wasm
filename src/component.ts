@@ -121,9 +121,15 @@ class SandComponent extends HTMLElement {
         const initSand = Module._initSand;
 
         // Link up WASM array with this.myArray
-        const len = WIDTH * HEIGHT * 4;
-        const arr = getArray(len);
-        this.pixelArray = new Uint8Array(Module.HEAP8.buffer, arr, len);
+        try{
+            const len = WIDTH * HEIGHT * 4;
+            const arr = getArray(len);
+            this.pixelArray = new Uint8Array(Module.HEAP8.buffer, arr, len);
+        } catch(e){
+            console.log(e);
+            setTimeout(() => this.onWasmLoad(), 200);
+            return;
+        }
 
         this.image = new Image();
         this.image.addEventListener("load",()=>{
