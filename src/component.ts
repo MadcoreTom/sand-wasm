@@ -20,7 +20,6 @@ class SandComponent extends HTMLElement {
     private shadow: ShadowRoot;
     private ctx: CanvasRenderingContext2D;
     private imageData: ImageData;
-    private arrayBufferView: Uint8Array;
     private drawSeed: number=1;
     private image;
     private modeButton: HTMLElement;
@@ -50,9 +49,6 @@ class SandComponent extends HTMLElement {
         this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         this.shadow.appendChild(canvas);
 
-        // image data and array buffer to hold shared memory
-        const buf = new ArrayBuffer(WIDTH * HEIGHT * 4);
-        this.arrayBufferView = new Uint8Array(buf);
         this.imageData = this.ctx.createImageData(canvas.width, canvas.height);
 
         // Brush Checkbox
@@ -165,8 +161,7 @@ class SandComponent extends HTMLElement {
 
         // Copy the shared array into the image data and draw it
         if (this.pixelArray) {
-            this.arrayBufferView.set(this.pixelArray); // Efficiently copies the contents
-            this.imageData.data.set(this.arrayBufferView);
+            this.imageData.data.set(this.pixelArray); // Efficiently copies the contents
             this.ctx.putImageData(this.imageData, 0, 0);
         }
 
